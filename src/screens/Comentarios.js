@@ -8,7 +8,8 @@ import {
     Dimensions,
     TextInput,
     Alert,
-    KeyboardAvoidingView
+    KeyboardAvoidingView,
+    AsyncStorage
 } from 'react-native';
 import { Actions } from 'react-native-router-flux';
 import Icon from 'react-native-vector-icons/Ionicons'
@@ -25,7 +26,18 @@ export default class DetalleReto extends Component {
             text:"",
         }
     }
-
+    componentWillMount(){
+        AsyncStorage.getItem("DatosPersonales")
+        .then(req => JSON.parse(req))
+        .then(json => {
+          if (json != null) {
+            this.setState({
+              photoCreador: json.photo,
+              creador: json.nombre_usuario,
+            })
+          }
+        })
+    }
     componentDidMount() {
         this.getRetoCommentsRef().on('child_added', this.addComment);
     }
@@ -41,14 +53,15 @@ export default class DetalleReto extends Component {
     
     handleSend = () => {
         const text = this.state.text
-        const { uid, photoURL, displayName } = firebaseAuth.currentUser
+        const { uid } = firebaseAuth.currentUser
+        const {creador,photoCreador}=this.state
         const retoCommentsRef = this.getRetoCommentsRef()
         var newCommentRef = retoCommentsRef.push();
         newCommentRef.set({
             text,
-            userPhoto: photoURL,
+            userPhoto: photoCreador,
             uid,
-            displayName
+            displayName:creador
         });
         this.setState({ text: '' })
 

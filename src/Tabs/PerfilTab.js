@@ -7,6 +7,7 @@ import {
   ScrollView,
   Dimensions,
   TouchableOpacity,
+  AsyncStorage,
 } from 'react-native'
 import { Actions } from 'react-native-router-flux';
 import Icon from 'react-native-vector-icons/Ionicons'
@@ -21,15 +22,26 @@ export default class PerfilTab extends React.Component {
     super()
     const { uid, photoURL, displayName } = firebaseAuth.currentUser
     this.state = {
-      photo: photoURL,
-      nombre_usuario: displayName,
+      photo: null,
+      nombre_usuario: "",
       retos: [],
     }
   }
   componentWillMount() {
 
     this.getRetosRef().on('child_added', this.addReto);
-
+    AsyncStorage.getItem("DatosPersonales")
+    .then(req => JSON.parse(req))
+    .then(json => {
+      if (json != null) {
+        this.setState({
+          photo: json.photo,
+          nombre_usuario: json.nombre_usuario,
+          email: json.email,
+          telefono: json.telefono,
+        })
+      }
+    })
   }
   componentWillUnmount() {
     this.getRetosRef().off('child_added', this.addReto);
@@ -76,8 +88,8 @@ export default class PerfilTab extends React.Component {
           <Text style={styles.nombre}>{nombre_usuario}</Text>
           <TouchableOpacity onPress={()=>Actions.perfilEdicion()}
              style={{ flexDirection:'row',alignItems:'center', padding: 5, }}>
-            <Icon name="md-create" size={30} />
-            <Text>Editar</Text>
+            <Icon name="ios-construct-outline" size={30} />
+            <Text>Configuracion</Text>
           </TouchableOpacity>
 
 

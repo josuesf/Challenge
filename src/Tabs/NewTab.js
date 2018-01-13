@@ -14,6 +14,7 @@ import {
   TouchableNativeFeedback,
   Image,
   Alert,
+  AsyncStorage,
 } from 'react-native'
 import Icon from 'react-native-vector-icons/Ionicons'
 import Toolbar from 'react-native-toolbar';
@@ -38,9 +39,11 @@ export default class NewTab extends React.Component {
     this.state = {
       idUser: uid,
       nombre_reto: null,
-      creador: displayName,
-      photoCreador: photoURL,
+      creador: "",
+      photoCreador: "",
       categoria: 'Futbol',
+      nivel_habilidad:'BEGGINER',
+      sexo:'AMBOS',
       fechaReto: 'Toque para establecer fecha',
       horaReto: 'y la hora',
       numero_paricipantes: null,
@@ -55,6 +58,7 @@ export default class NewTab extends React.Component {
         longitudeDelta: 0,
       },
       markerPosition: null,
+      deportes: [],
     }
   }
 
@@ -117,6 +121,8 @@ export default class NewTab extends React.Component {
         longitude: reto.longitude,
         participantes: participantes_,
         referenciaLugar:reto.referenciaLugar,
+        nivel_habilidad:reto.nivel_habilidad,
+        sexo:reto.sexo
 
       }).then(() => {
         const retosParticipantesRef = this.getRetosParticipantesRef(newRetoRef.key)
@@ -125,6 +131,8 @@ export default class NewTab extends React.Component {
           id_user: idUser,
           nombre: reto.creador,
           photo: reto.photoCreador,
+          activo: true,
+          fuisteEliminado:false
         }).then(() => {
           store.dispatch({
             type: 'FINISH_STATE',
@@ -217,7 +225,7 @@ export default class NewTab extends React.Component {
         }
         this.setState({ initialPosition: initialRegion });
       },
-      (error) => alert(error.message),
+      (error) => console.log(error.message),
       { enableHighAccuracy: true, timeout: 20000, maximumAge: 1000 }
     );
 
@@ -233,8 +241,22 @@ export default class NewTab extends React.Component {
       this.setState({ initialPosition: initialRegion });
     });
   }
-  componentWillUnmount() {
-    navigator.geolocation.clearWatch(this.watchID);
+  componentWillMount() {
+    AsyncStorage.getItem("Deportes")
+      .then(req => JSON.parse(req))
+      .then(json => this.setState({ deportes: json }))
+    AsyncStorage.getItem("DatosPersonales")
+      .then(req => JSON.parse(req))
+      .then(json => {
+        if (json != null) {
+          this.setState({
+            photoCreador: json.photo,
+            creador: json.nombre_usuario,
+            email: json.email,
+            telefono: json.telefono,
+          })
+        }
+      })
   }
   AbrirMapa = () => {
     Actions.mapa({ initialPosition: this.state.initialPosition })
@@ -285,10 +307,29 @@ export default class NewTab extends React.Component {
             <Picker
               selectedValue={this.state.categoria}
               onValueChange={(itemValue, itemIndex) => this.setState({ categoria: itemValue })}>
-              <Picker.Item label="Futbol" value="Futbol" />
-              <Picker.Item label="Voley" value="Voley" />
-              <Picker.Item label="Basket" value="Basket" />
-              <Picker.Item label="Tenis" value="Tenis" />
+              {this.state.deportes.map((d, i) => <Picker.Item key={i} label={d} value={d} />)}
+            </Picker>
+          </View>
+          <Text style={styles.tituloLabel}>Nivel Habilidad :</Text>
+          <View style={styles.pickerCategoria}>
+            <Picker
+              selectedValue={this.state.nivel_habilidad}
+              onValueChange={(itemValue, itemIndex) => this.setState({ nivel_habilidad: itemValue })}>
+              <Picker.Item key={0} label={"BEGGINER"} value={"BEGGINER"} />
+              <Picker.Item key={1} label={"AMATEUR"} value={"AMATEUR"} />
+              <Picker.Item key={2} label={"INTERMEDIO"} value={"INTERMEDIO"} />
+              <Picker.Item key={3} label={"PRO"} value={"PRO"} />
+              <Picker.Item key={3} label={"LEGENDARIO"} value={"LEGENDARIO"} />
+            </Picker>
+          </View>
+          <Text style={styles.tituloLabel}>Sexo :</Text>
+          <View style={styles.pickerCategoria}>
+            <Picker
+              selectedValue={this.state.sexo}
+              onValueChange={(itemValue, itemIndex) => this.setState({ sexo: itemValue })}>
+              <Picker.Item key={0} label={"AMBOS"} value={"AMBOS"} />
+              <Picker.Item key={1} label={"MASCULINO"} value={"MASCULINO"} />
+              <Picker.Item key={2} label={"FEMENINO"} value={"FEMENINO"} />
             </Picker>
           </View>
           <Text style={styles.tituloLabel}>Seleccionar Lugar :</Text>

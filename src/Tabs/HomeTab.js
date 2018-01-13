@@ -28,8 +28,9 @@ export default class HomeTab extends React.Component {
     AppState.addEventListener('change', this._handleAppStateChange);
   }
   componentWillMount() {
-    
-    this.getRetosRef().on('child_added', this.addReto);
+    this.getRetosRef().on('child_added', this.addReto);//child_changed
+    //this.getRetosRef().on('child_changed', this.changeReto);
+    AppState.removeEventListener('change', this._handleAppStateChange);
 
   }
   componentWillUnmount() {
@@ -52,6 +53,15 @@ export default class HomeTab extends React.Component {
         isLoading: false
       })
     }
+  }
+  changeReto = (data)=>{
+    const reto = data.val()
+    reto['id'] = data.key
+      this.setState({
+        retos: this.state.retos.filter(r=>r.id!=reto.id),
+        isLoading: false
+      })
+      this.setState({retos: this.state.retos.concat(reto),})
   }
   getRetosRef = () => {
     return firebaseDatabase.ref('retos/').orderByChild('fecha_sistema');

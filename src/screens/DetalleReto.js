@@ -32,11 +32,15 @@ export default class DetalleReto extends Component {
         const latitud = this.props.reto.latitude
         const longitud = this.props.reto.longitude
         const { uid, photoURL, displayName } = firebaseAuth.currentUser
+        const reto_ = this.props.reto
         var esParticipante_ = false
         if (this.props.reto.participantes[uid])
             esParticipante_ = true
-        console.log(esParticipante_)
+        var esCreador_ = false
+        if (uid == this.props.reto.id_creador)
+            esCreador_ = true
         this.state = {
+
             comments: [],
             nro_participantes: [],
             initialPosition: {
@@ -52,24 +56,38 @@ export default class DetalleReto extends Component {
             esParticipante: esParticipante_,
             numero_paricipantes: this.props.numero_paricipantes,
             hayCupos: true,
+            esCreador: esCreador_,
+            reto: reto_,
+            uid: uid,
         }
     }
 
     componentDidMount() {
+        this.getRetoRef().on('child_changed', this.changeReto);
         this.getRetoCommentsRef().on('child_added', this.addComment);
         this.getRetosParticipantesRef().on('child_added', this.addParticipante);
+        this.getRetosParticipantesRef().on('child_changed', this.changeParticipante);
+        
     }
     componentWillUnmount() {
+        this.getRetoRef().off('child_changed', this.changeReto);
         this.getRetoCommentsRef().off('child_added', this.addComment);
         this.getRetosParticipantesRef().off('child_added', this.addParticipante);
+        this.getRetosParticipantesRef().off('child_changed', this.changeParticipante);
+        this.getEstadoParticipante().off('value',this.estadoReto)
     }
     componentWillMount() {
         const { uid } = firebaseAuth.currentUser
         this.getParticipantesRef().on('value', snapshot => {
             const participantes = snapshot.val()
+            console.log(participantes)
             if (participantes[uid]) {
                 this.setState({
                     esParticipante: true,
+                })
+            }else{
+                this.setState({
+                    esParticipante: false,
                 })
             }
         })
@@ -82,6 +100,33 @@ export default class DetalleReto extends Component {
                 })
             }
         })
+        this.getEstadoParticipante().on('value',this.estadoReto)
+        
+    }
+    estadoReto=(snapshot)=>{
+        const p=snapshot.val()
+        
+            if(p && p.fuisteEliminado){
+                this.getRetoRef().transaction((reto)=> {
+                    const uid = this.state.uid
+                    if (reto) {
+                        reto.participantes[uid] = null;
+                    }
+                    return reto;
+                });
+                this.getEstadoParticipante().transaction(function (p) {
+                    if (p) {
+                        p.fuisteEliminado=false
+                    }
+                    return p;
+                })
+                Alert.alert('Lo sentimos','Usted fue eliminado de este challenge')
+            }
+    }
+    changeReto = (data) => {
+        var reto_ = this.state.reto
+        reto_[data.key] = data.val()
+        this.setState({ reto: reto_, esParticipante: reto_.participantes[this.state.uid] })
     }
     addComment = (data) => {
         const comment = data.val()
@@ -89,13 +134,33 @@ export default class DetalleReto extends Component {
             comments: this.state.comments.concat(comment)
         })
     }
-    addParticipante = (data) => {
+    changeParticipante = (data) => {
         const participante = data.val()
 
-        this.setState({
-            nro_participantes: this.state.nro_participantes.concat(participante)
-        })
+        participante["id"] = data.key
+        if (!participante.activo)
+            this.setState({
+                nro_participantes: this.state.nro_participantes.filter(p => p.id != participante.id)
+            })
+        else {
+            this.setState({
+                nro_participantes: this.state.nro_participantes.concat(participante)
+            })
+        }
         //console.log(this.state.nro_participantes)
+    }
+    addParticipante = (data) => {
+        const participante = data.val()
+        participante["id"] = data.key
+        if (participante.id_user == this.props.reto.id_creador)
+            participante["esCreador"] = true
+        else {
+            participante["esCreador"] = false
+        }
+        if (participante["activo"])
+            this.setState({
+                nro_participantes: this.state.nro_participantes.concat(participante)
+            })
     }
     handleSend = () => {
         const text = this.state.text
@@ -127,7 +192,7 @@ export default class DetalleReto extends Component {
         Actions.mapaDetalle({ initialPosition: this.state.initialPosition })
     }
     VerComentarios = () => {
-        Actions.comentarios({ reto:this.props.reto  })
+        Actions.comentarios({ reto: this.props.reto })
     }
     handleChangeText = (text) => this.setState({ text })
 
@@ -154,31 +219,66 @@ export default class DetalleReto extends Component {
                 }
                 return reto;
             });
-            const retosParticipantesRef = this.getRetosParticipantesRef()
-            const newRetosParticipantesRef = retosParticipantesRef.push()
-            newRetosParticipantesRef.set({
-                id_user: uid,
-                nombre: displayName,
-                photo: photoURL,
-            }).then(() => {
-                this.setState({ esParticipante: true })
+            this.getRetosParticipantesRef().transaction(function (participante) {
+                if (participante) {
+                    if (participante[uid]) {
+                        participante[uid].activo = true
+                    } else {
+                        participante[uid] = {
+                            id_user: uid,
+                            nombre: displayName,
+                            photo: photoURL,
+                            activo: true,
+                        }
+                    }
+                }
+                return participante
             })
+            this.getAmigosUsuario().transaction((usuario) => {
+                if (usuario) {
+                    usuario[uid] = {
+                        id_user: uid,
+                        nombre: displayName,
+                        photo: photoURL,
+                        activo: true,
+                        fuisteEliminado:false
+                    }
+                }
+                return usuario != null ? usuario :
+                    {
+                        [uid]: {
+                            id_user: uid,
+                            nombre: displayName,
+                            photo: photoURL,
+                            activo: true,
+                            fuisteEliminado:false
+                        }
+                    }
+
+            })
+            this.setState({ esParticipante: true })
+
         }
 
     }
     getRetosParticipantesRef = () => {
         return firebaseDatabase.ref('retoParticipantes/' + this.props.reto.id + '/')
     }
+    getEstadoParticipante= () => {
+        return firebaseDatabase.ref('retoParticipantes/' + this.props.reto.id + '/'+this.state.uid+'/')
+    }
+    getAmigosUsuario = () => {
+        return firebaseDatabase.ref('amigosUsuario/' + this.props.reto.id_creador + '/')
+    }
     render() {
-        const reto = this.props.reto
-        const { comments, nro_participantes, esParticipante, hayCupos } = this.state
-
+        const { comments, nro_participantes, esParticipante, hayCupos, esCreador, reto } = this.state
+        
         return (
             <KeyboardAvoidingView behavior="padding" style={styles.container}>
 
                 <RetoBox reto={reto} />
                 <Text style={styles.titulos}>Ubicacion</Text>
-                {reto.referenciaLugar!="" && <Text style={{fontSize:10,color:"#333"}}>{reto.referenciaLugar}</Text>}
+                {reto.referenciaLugar != "" && <Text style={{ fontSize: 10, color: "#333" }}>Referencia: {reto.referenciaLugar}</Text>}
                 <TouchableOpacity onPress={this.AbrirMapa} style={{
                     backgroundColor: "#FFF",
                     borderColor: "#16a085", borderWidth: 1
@@ -188,9 +288,11 @@ export default class DetalleReto extends Component {
                     <Text style={{ color: "#16a085" }}>Ver la ubicacion</Text>
                 </TouchableOpacity>
                 <Text style={styles.titulos}>Participantes</Text>
+                {esCreador && <Text style={{ fontSize: 10, color: "#333" }}>Toca para eliminar a un participante</Text>}
 
                 <View style={styles.participantesBox}>
-                    <ParticipantesList participantes={nro_participantes} />
+                    <ParticipantesList esCreador={esCreador} id={this.props.reto.id} participantes={nro_participantes} />
+
                     {hayCupos && !esParticipante && <TouchableOpacity
                         onPress={() => this.participar()}
                         style={{
@@ -206,8 +308,8 @@ export default class DetalleReto extends Component {
                 <Text style={styles.titulos}>Comentarios</Text>
                 <CommentList comments={comments} />
                 <TouchableOpacity onPress={this.VerComentarios} style={{
-                    backgroundColor: "#FFF", 
-                    borderColor: "#9b59b6", borderWidth: 1,marginBottom:5,marginTop:5,
+                    backgroundColor: "#FFF",
+                    borderColor: "#9b59b6", borderWidth: 1, marginBottom: 5, marginTop: 5,
                     alignItems: "center", flexDirection: "row", borderRadius: 10
                 }}>
                     <Icon name="ios-chatbubbles-outline" size={20} color="#9b59b6" style={{ paddingRight: 5, paddingLeft: 10, paddingBottom: 5, paddingTop: 5, }} />

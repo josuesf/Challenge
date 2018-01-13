@@ -82,7 +82,7 @@ export default class RetoBox extends Component {
 
     render() {
         //console.warn('el nombre',this.props.artist.name)
-        const { nombre_reto, creador, fechaReto, horaReto, photoCreador, categoria } = this.props.reto
+        const { nombre_reto, creador, fechaReto, horaReto, photoCreador, categoria,nivel_habilidad,sexo } = this.props.reto
         const date = fechaReto.split('-')[0]
         const mes = this.getNombreMes(fechaReto.split('-')[1])
         const likeIcon = this.state.liked ?
@@ -103,6 +103,14 @@ export default class RetoBox extends Component {
                         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                             <Text style={styles.name}>{categoria}</Text>
                             <Text style={styles.fecha}>"{nombre_reto}"</Text>
+                        </View>
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <Text style={styles.name}>Nivel</Text>
+                            <Text style={styles.fecha}>{nivel_habilidad}</Text>
+                        </View>
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <Text style={styles.name}>Sexo</Text>
+                            <Text style={styles.fecha}>{sexo}</Text>
                         </View>
                         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                             <Icon style={[{ marginLeft: 18 }]} name='md-calendar' size={30} />

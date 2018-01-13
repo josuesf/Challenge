@@ -22,4 +22,8 @@ const reducer = (state,action) =>{
     return state
 }
 
-export default createStore(reducer,{location:null,deportesValidacion:false})
+export default createStore(reducer,
+    {
+        location:null,
+        deportesValidacion:false,
+    })

@@ -50,36 +50,35 @@ export default class LoginView extends Component {
   guardarClaves = async (credencial) => {
     try {
       await AsyncStorage.setItem('CREDENTIALS', JSON.stringify(credencial.credencialsUser));
-<<<<<<< HEAD
-      // {uid:31313142,displayName:nombre,email:dadada,photoUrl:http//dasdasada.png}
-=======
->>>>>>> 83298d537dfb6be6eb10a66d29602a1cb4667885
     } catch (error) {
       // Error saving data
     }
   }
-  recuperarClaves = async () => {
+  recuperarClaves = () => {
     try {
-      const value = await AsyncStorage.getItem('CREDENTIALS');
-      if (value !== null) {
-        // We have data!!
-        const credentials = (JSON.parse(value)).credentialsUser
-        this.setState({
-          credentialsUser: {
-            uid: credentials.uid,
-            displayName: credentials.displayName,
-            email: credentials.email,
-            photoURL: credentials.photoURL,
-          }
-        })
-        Actions.replace('home')
-      } else {
-        this.setState({ estaLogueado: false })
-        this.authenticateUser()
-      }
+      AsyncStorage.getItem('CREDENTIALS',(err,value)=>{
+        console.log(value)
+        if (JSON.parse(value) != null) {
+          // We have data!!
+          
+          const credentials = (JSON.parse(value))
+          console.log(credentials)
+          this.setState({
+            credentialsUser: {
+              uid: credentials.uid,
+              displayName: credentials.displayName,
+              email: credentials.email,
+              photoURL: credentials.photoURL,
+            }
+          })
+          Actions.replace('home')
+        } else {
+          this.setState({ estaLogueado: false })
+          this.authenticateUser()
+        }
+      })
+      
     } catch (error) {
-      // Error retrieving data
-
       console.log(error)
     }
   }
@@ -150,6 +149,11 @@ export default class LoginView extends Component {
           readPermissions={["public_profile", "email"]}
           onLoginFinished={this.handleLoginFinish}
           onLogoutFinished={() => this.hanleLogOut()} />}
+        {!this.state.estaLogueado &&
+          <View style={{ marginTop: 10 }} >
+            <Button onPress={() => Actions.LoginCorreo()} color="darkgray" title="Ingresar con correo electronico" />
+          </View>
+        }
         {!this.state.connection &&
           <TouchableOpacity onPress={() => this.authenticateUser()}>
             <Text style={{ color: 'white', fontWeight: 'bold' }}>Conectarse a Internet para continuar</Text>

@@ -31,6 +31,9 @@ export default class MisRetosTab extends React.Component {
     this.getRetosRef().off('child_added', this.addReto);
     this.getRetosRef().off('child_changed', this.addReto);
   }
+  buscarRetos=(reto)=>{
+    
+  }
   addReto = (data) => {
     const reto = data.val()
     reto['id'] = data.key

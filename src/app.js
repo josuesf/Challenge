@@ -23,12 +23,11 @@ import HomeTab from './Tabs/HomeTab'
 import NewTab from './Tabs/NewTab'
 import MisRetosTab from './Tabs/MisRetosTab'
 import PerfilTab from './Tabs/PerfilTab'
+import FriendsTab from './Tabs/FriendsTab'
 import Comentarios from './screens/Comentarios'
 import SeleccionDeportes from './screens/SeleccionDeportes'
-<<<<<<< HEAD
 import PerfilEdicion from './screens/PerfilEdicion'
-=======
->>>>>>> 83298d537dfb6be6eb10a66d29602a1cb4667885
+import LoginCorreo from './screens/LoginCorreo'
 import Icon from 'react-native-vector-icons/Ionicons'
 class RetosI extends React.Component {
   constructor() {
@@ -58,12 +57,9 @@ class RetosI extends React.Component {
         
         <Scene key="root">
           <Scene key="login" component={LoginView} initial hideNavBar />
-<<<<<<< HEAD
+          <Scene key="LoginCorreo" component={LoginCorreo}  hideNavBar />
           <Scene key="perfilEdicion" component={PerfilEdicion}  hideNavBar />
-          <Scene key="seleccionDeportes" component={SeleccionDeportes}  hideNavBar />
-=======
-          <Scene key="selecDeporte" component={SeleccionDeportes} hideNavBar />
->>>>>>> 83298d537dfb6be6eb10a66d29602a1cb4667885
+          <Scene key="seleccionDeportes" component={SeleccionDeportes} hideNavBar />
           <Scene key="home">
             <Scene key="homeTabs"
               tabs
@@ -84,9 +80,13 @@ class RetosI extends React.Component {
               <Scene key="MisRetosTab" title="Mis Retos" iconName="md-flash" icon={TabIcon}>
                 <Scene key="MisRetosTab_" hideNavBar component={MisRetosTab} />
               </Scene>
+              <Scene key="Amigos" title="Amigos" iconName="ios-people" icon={TabIcon}>
+                <Scene key="amigos_" hideNavBar component={FriendsTab} />
+              </Scene>
               <Scene key="PerfilTab" title="Perfil" iconName="md-contact" icon={TabIcon}>
                 <Scene key="PerfilTab_" hideNavBar component={PerfilTab} />
               </Scene>
+              
             </Scene>
 
           </Scene>
